@@ -11794,6 +11794,9 @@ h1 span { color: var(--red); }
   const resumeButton = document.querySelector(".resume-button");
   const STORAGE_KEY = "shijing-cup-v1";
   const PRESELECTION_KEY = "shijing-cup-preselection-v1";
+  const STATISTICS_ENDPOINT = window.location?.hostname === "lufeng2985.github.io"
+    ? "https://worldcupforfun.cn/api/results"
+    : "/api/results";
   const allPeriods = new Set(data.periodOrder);
   const allGenres = new Set(["poetry", "ci"]);
 
@@ -11912,7 +11915,7 @@ h1 span { color: var(--red); }
     statisticsState = { status: "loading", data: null, error: "" };
     updateStatisticsPanel();
     try {
-      const response = await fetch("/api/results", {
+      const response = await fetch(STATISTICS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
