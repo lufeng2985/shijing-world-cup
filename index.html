@@ -526,6 +526,24 @@ h1 span { color: var(--red); }
 .result-section { padding: 22px; border-bottom: 1px solid var(--line); }
 .result-section:last-child { border-bottom: 0; }
 .result-section h3 { margin-bottom: 15px; font-size: 17px; }
+.statistics-section { background: linear-gradient(135deg,rgba(251,246,234,.94),rgba(243,237,222,.72)); }
+.statistics-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.statistics-heading h3 { margin: 0 0 6px; }
+.statistics-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+.statistics-heading > span { padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+.statistics-personal { display: grid; grid-template-columns: minmax(140px,.35fr) 1fr; align-items: center; gap: 22px; margin-top: 18px; padding: 18px; border: 1px solid rgba(159,53,45,.25); border-radius: 10px; background: rgba(255,253,248,.84); }
+.statistics-personal span { display: block; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.statistics-personal strong { display: block; margin-top: 5px; color: var(--red); font-family: "Songti SC",STSong,SimSun,serif; font-size: 28px; }
+.statistics-personal p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+.statistics-personal b { color: var(--ink); }
+.statistics-leaders { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+.statistics-leaders > div { min-height: 105px; padding: 15px; border: 1px solid var(--line); border-radius: 9px; background: rgba(255,253,248,.7); }
+.statistics-leaders small { display: block; margin-bottom: 12px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.statistics-leaders strong { display: block; color: var(--ink); font-family: "Songti SC",STSong,SimSun,serif; font-size: 18px; }
+.statistics-leaders span { display: block; margin-top: 7px; color: var(--red); font-size: 11px; }
+.statistics-notice { margin: 0; color: var(--muted); font-size: 13px; }
+.statistics-retry { margin-top: 14px; }
+.statistics-footnote { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
 .summary-groups { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
 .summary-group { padding: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
 .summary-group strong { display: block; margin-bottom: 8px; font-size: 12px; }
@@ -649,6 +667,7 @@ h1 span { color: var(--red); }
 .champion-column strong { color: var(--red); font-family: "Songti SC",SimSun,serif; font-size: 28px; }
 .empty { grid-column: 1/-1; padding: 40px; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); text-align: center; }
 .footer { display: flex; justify-content: space-between; gap: 20px; padding: 20px clamp(18px,4vw,60px); border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.footer a { color: inherit; text-underline-offset: 3px; }
 .confirm-overlay {
   position: fixed;
   z-index: 1000;
@@ -735,6 +754,10 @@ h1 span { color: var(--red); }
   .fighter-name { min-height: 105px; font-size: 52px; }
   .fighter-excerpt { font-size: 13px; }
   .summary-groups { grid-template-columns: 1fr 1fr; }
+  .statistics-heading { flex-direction: column; gap: 10px; }
+  .statistics-personal { grid-template-columns: 1fr; gap: 10px; }
+  .statistics-leaders { grid-template-columns: 1fr; }
+  .statistics-leaders > div { min-height: 0; }
   .bracket-result-section { padding-inline: 10px; }
   .bracket-title-row { align-items: flex-start; flex-direction: column; gap: 3px; padding-inline: 8px; }
   .symmetric-bracket { transform-origin: top left; }
@@ -773,9 +796,10 @@ h1 span { color: var(--red); }
   <main id="app" class="app" aria-live="polite"></main>
 
   <footer class="footer">
-    <span>所有选择仅保存在当前浏览器</span>
+    <span>评选过程保存在当前浏览器；完成后匿名提交冠军、亚军与四强</span>
     <span>首页画意与篆书字形取自公共领域馆藏</span>
     <span>离线可用 · 不收集个人信息</span>
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">京ICP备2026048589号-1</a>
   </footer>
 
   <div class="confirm-overlay" data-confirm-restart hidden>
@@ -11783,6 +11807,7 @@ h1 span { color: var(--red); }
   let undoStack = [];
   let restartTrigger = null;
   let preselection = null;
+  let statisticsState = { status: "idle", data: null, error: "" };
 
   const escapeHtml = (value) =>
     String(value)
@@ -11813,6 +11838,98 @@ h1 span { color: var(--red); }
       return true;
     });
   };
+
+  function anonymousSubmissionId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+  }
+
+  function placementsFromTournament(state) {
+    const rounds = state?.knockout?.rounds || [];
+    const finalMatch = rounds.at(-1)?.matches?.[0];
+    const champion = state?.champion;
+    if (!champion || !finalMatch?.a || !finalMatch?.b) return null;
+    const runnerUp = finalMatch.a.id === champion.id ? finalMatch.b : finalMatch.a;
+    const semifinalRound = [...rounds].reverse().find((round) => unique(round.entrants || []).length === 4);
+    const semifinalists = unique(semifinalRound?.entrants || []);
+    if (semifinalists.length !== 4 || !semifinalists.some((poem) => poem.id === champion.id) || !semifinalists.some((poem) => poem.id === runnerUp.id)) return null;
+    return { champion, runnerUp, semifinalists };
+  }
+
+  function resultPlacements() {
+    return placementsFromTournament(tournament);
+  }
+
+  function leaderMarkup(items) {
+    if (!items?.length) return "暂无数据";
+    const names = items.map((item) => `《${escapeHtml(item.name)}》`).join("、");
+    const first = items[0];
+    return `<strong>${names}</strong><span>${first.count}份 · ${first.percent}%</span>`;
+  }
+
+  function statisticsMarkup() {
+    if (statisticsState.status === "loading" || statisticsState.status === "idle") {
+      return `<section class="result-section statistics-section" data-statistics><h3>全站结果统计</h3><p class="statistics-notice">正在匿名提交本次名次并读取累计结果……</p></section>`;
+    }
+    if (statisticsState.status === "error") {
+      return `<section class="result-section statistics-section" data-statistics><h3>全站结果统计</h3><p class="statistics-notice">${escapeHtml(statisticsState.error)}</p><button class="quiet-button statistics-retry" type="button" data-action="retry-statistics">重新加载</button></section>`;
+    }
+    const stats = statisticsState.data;
+    return `<section class="result-section statistics-section" data-statistics>
+      <div class="statistics-heading"><div><h3>全站结果统计</h3><p>自统计功能上线后，已收录 ${stats.total} 份完整结果。</p></div><span>仅提交冠军、亚军与四强</span></div>
+      <div class="statistics-personal">
+        <div><span>你的冠军篇目</span><strong>${escapeHtml(stats.selected.champion)}</strong></div>
+        <p>其中 <b>${stats.selected.championCount}份（${stats.selected.championPercent}%）</b> 的冠军同样是《${escapeHtml(stats.selected.champion)}》；<b>${stats.selected.topFourCount}份（${stats.selected.topFourPercent}%）</b>将其选入四强。</p>
+      </div>
+      <div class="statistics-leaders">
+        <div><small>冠军最多</small>${leaderMarkup(stats.leaders.champion)}</div>
+        <div><small>亚军最多</small>${leaderMarkup(stats.leaders.runnerUp)}</div>
+        <div><small>进入四强最多</small>${leaderMarkup(stats.leaders.topFour)}</div>
+      </div>
+      <p class="statistics-footnote">匿名随机编号仅用于避免刷新造成重复计数；不提交评选过程、姓名、账号或设备资料。</p>
+    </section>`;
+  }
+
+  function updateStatisticsPanel() {
+    const panel = document.querySelector("[data-statistics]");
+    if (!panel) return;
+    const template = document.createElement("template");
+    template.innerHTML = statisticsMarkup().trim();
+    panel.replaceWith(template.content.firstElementChild);
+  }
+
+  async function submitStatistics() {
+    const placements = resultPlacements();
+    if (!placements) {
+      statisticsState = { status: "error", data: null, error: "无法从本次签表中读取完整四强，结果未提交。" };
+      updateStatisticsPanel();
+      return;
+    }
+    if (!tournament.statisticsSubmissionId) {
+      tournament.statisticsSubmissionId = anonymousSubmissionId();
+      saveTournament();
+    }
+    statisticsState = { status: "loading", data: null, error: "" };
+    updateStatisticsPanel();
+    try {
+      const response = await fetch("/api/results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project: "shijing",
+          submissionId: tournament.statisticsSubmissionId,
+          championId: placements.champion.id,
+          runnerUpId: placements.runnerUp.id,
+          semifinalistIds: placements.semifinalists.map((poem) => poem.id)
+        })
+      });
+      if (!response.ok) throw new Error("request failed");
+      statisticsState = { status: "ready", data: await response.json(), error: "" };
+    } catch (_) {
+      statisticsState = { status: "error", data: null, error: "统计服务暂时无法连接；本地比赛结果不受影响。" };
+    }
+    updateStatisticsPanel();
+  }
 
   function fullTitle(title) {
     return `${title}·詩經杯`;
@@ -12173,6 +12290,7 @@ h1 span { color: var(--red); }
       knockout: null,
       transition: null,
       champion: null,
+      statisticsSubmissionId: anonymousSubmissionId(),
       startedAt: new Date().toISOString()
     };
     undoStack = [];
@@ -12823,6 +12941,7 @@ h1 span { color: var(--red); }
           </div>
           <div class="bracket-wrap">${symmetricBracket(rounds)}</div>
         </div>
+        ${statisticsMarkup()}
         ${tournament.cut && tournament.cut.kept ? `<div class="result-section"><h3>名单裁定</h3><p>保留：${tournament.cut.kept.map((poet) => escapeHtml(poet.name)).join("、")}</p></div>` : ""}
         ${byeSummary(tournament.byeSelection)}
         ${groupSummary("预选赛", tournament.prelim)}
@@ -12831,6 +12950,7 @@ h1 span { color: var(--red); }
         ${revivalSummary("小组复活", tournament.groupRevival)}
       </section>`;
     updateResumeButton();
+    submitStatistics();
   }
 
   function renderStage() {
@@ -13097,6 +13217,8 @@ h1 span { color: var(--red); }
       tournament ? renderStage() : renderHome();
     } else if (action === "download") {
       downloadResult();
+    } else if (action === "retry-statistics") {
+      submitStatistics();
     }
   });
 
@@ -13141,7 +13263,7 @@ h1 span { color: var(--red); }
     return { valid: errors.length === 0, errors, rounds: rounds.length };
   }
 
-  window.__SHIJING_CUP_TEST__ = { formatForCount, buildGroups, byeCountFor, buildKnockoutRound, orderKnockoutRounds, validateKnockout, getTournament: () => tournament };
+  window.__SHIJING_CUP_TEST__ = { formatForCount, buildGroups, byeCountFor, buildKnockoutRound, orderKnockoutRounds, placementsFromTournament, validateKnockout, getTournament: () => tournament };
   updateResumeButton();
   renderHome();
 })();
