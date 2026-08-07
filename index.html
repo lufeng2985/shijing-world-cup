@@ -544,6 +544,23 @@ h1 span { color: var(--red); }
 .statistics-notice { margin: 0; color: var(--muted); font-size: 13px; }
 .statistics-retry { margin-top: 14px; }
 .statistics-footnote { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.named-result-section { background: linear-gradient(135deg,rgba(158,52,44,.045),rgba(183,145,67,.065)); }
+.named-result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.named-result-heading h3 { margin: 0 0 5px; }
+.named-result-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+.named-result-heading > span { flex: 0 0 auto; padding: 5px 9px; border: 1px solid rgba(158,52,44,.22); border-radius: 999px; color: var(--red); font-size: 10px; font-weight: 800; }
+.named-result-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px 12px; margin-top: 19px; }
+.named-result-form > label:first-child { grid-column: 1 / -1; color: var(--ink); font-size: 12px; font-weight: 800; }
+.named-result-form input[type="text"] { min-width: 0; min-height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); color: var(--ink); font: inherit; }
+.named-result-form input[type="text"]:focus { border-color: var(--red); outline: 2px solid rgba(158,52,44,.12); }
+.named-consent { display: flex; grid-column: 1 / -1; gap: 9px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.named-consent input { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; accent-color: var(--red); }
+.named-consent a { margin: 0 3px; color: var(--red); }
+.named-result-status { grid-column: 1 / -1; min-height: 18px; margin: 0; color: var(--red); font-size: 11px; }
+.named-result-note { margin: 13px 0 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
+.named-result-saved { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; padding: 14px; border: 1px solid rgba(183,145,67,.3); border-radius: 10px; background: rgba(255,255,255,.65); }
+.named-result-saved p { margin: 0; color: var(--muted); }
+.named-result-saved strong { color: var(--ink); }
 .summary-groups { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
 .summary-group { padding: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
 .summary-group strong { display: block; margin-bottom: 8px; font-size: 12px; }
@@ -758,6 +775,9 @@ h1 span { color: var(--red); }
   .statistics-personal { grid-template-columns: 1fr; gap: 10px; }
   .statistics-leaders { grid-template-columns: 1fr; }
   .statistics-leaders > div { min-height: 0; }
+  .named-result-heading, .named-result-saved { align-items: stretch; flex-direction: column; }
+  .named-result-form { grid-template-columns: 1fr; }
+  .named-result-form .primary-button { width: 100%; }
   .bracket-result-section { padding-inline: 10px; }
   .bracket-title-row { align-items: flex-start; flex-direction: column; gap: 3px; padding-inline: 8px; }
   .symmetric-bracket { transform-origin: top left; }
@@ -11889,8 +11909,121 @@ h1 span { color: var(--red); }
         <div><small>亚军最多</small>${leaderMarkup(stats.leaders.runnerUp)}</div>
         <div><small>进入四强最多</small>${leaderMarkup(stats.leaders.topFour)}</div>
       </div>
-      <p class="statistics-footnote">匿名随机编号仅用于避免刷新造成重复计数；不提交评选过程、姓名、账号或设备资料。</p>
+      <p class="statistics-footnote">默认统计仅提交冠军、亚军和四强。只有主动填写用户名并明确同意时，才会额外保存完整淘汰赛签表。</p>
     </section>`;
+  }
+
+  function compactBracket() {
+    return {
+      title: fullTitle(tournament.title),
+      initialCount: tournament.initialCount,
+      rounds: orderKnockoutRounds(tournament.knockout.rounds).map((round) => ({
+        entrants: (round.entrants || []).map((item) => item.id),
+        matches: (round.matches || []).map((match) => ({
+          a: match.a?.id || null,
+          b: match.b?.id || null,
+          winner: match.winner?.id || null
+        }))
+      }))
+    };
+  }
+
+  function resultPayload(extra = {}) {
+    const placements = resultPlacements();
+    return {
+      project: "shijing",
+      submissionId: tournament.statisticsSubmissionId,
+      championId: placements.champion.id,
+      runnerUpId: placements.runnerUp.id,
+      semifinalistIds: placements.semifinalists.map((poem) => poem.id),
+      ...extra
+    };
+  }
+
+  function namedResultMarkup() {
+    if (tournament.namedResultSaved) {
+      return `<section class="result-section named-result-section" data-named-result>
+        <div class="named-result-heading"><div><h3>具名结果已保存</h3><p>管理员可以在非公开后台查看本次完整签表。</p></div><span>保存期最长一年</span></div>
+        <div class="named-result-saved"><p>本次结果保存为：<strong>${escapeHtml(tournament.savedDisplayName || "未命名用户")}</strong></p><button class="quiet-button" type="button" data-action="delete-named-result">删除我的具名记录</button></div>
+        <p class="named-result-note">删除后，用户名和完整签表会立即清除；冠军、亚军和四强仍以匿名形式保留在总统计中。</p>
+      </section>`;
+    }
+    return `<section class="result-section named-result-section" data-named-result>
+      <div class="named-result-heading"><div><h3>为本次结果署名（可选）</h3><p>不填写不影响结果图和匿名统计。</p></div><span>仅管理员可见</span></div>
+      <div class="named-result-form">
+        <label for="result-display-name">用户名／昵称</label>
+        <input id="result-display-name" type="text" maxlength="30" autocomplete="nickname" placeholder="请勿填写真实姓名、手机号等信息">
+        <label class="named-consent"><input id="named-result-consent" type="checkbox"> <span>我已阅读<a href="https://worldcupforfun.cn/privacy/" target="_blank" rel="noopener">具名结果说明</a>，同意保存用户名、提交时间、完整淘汰赛签表、四强、亚军和冠军，最长一年。</span></label>
+        <button class="primary-button" type="button" data-action="save-named-result">保存本次具名结果</button>
+        <p class="named-result-status" data-named-status aria-live="polite"></p>
+      </div>
+      <p class="named-result-note">默认仍为匿名模式；不满十四周岁的用户请勿使用具名保存功能。</p>
+    </section>`;
+  }
+
+  function updateNamedResultPanel() {
+    const panel = document.querySelector("[data-named-result]");
+    if (!panel) return;
+    const template = document.createElement("template");
+    template.innerHTML = namedResultMarkup().trim();
+    panel.replaceWith(template.content.firstElementChild);
+  }
+
+  async function saveNamedResult() {
+    const nameInput = document.getElementById("result-display-name");
+    const consent = document.getElementById("named-result-consent");
+    const status = document.querySelector("[data-named-status]");
+    const displayName = nameInput?.value.trim() || "";
+    if (!displayName) {
+      if (status) status.textContent = "请先输入用户名或昵称。";
+      nameInput?.focus();
+      return;
+    }
+    if (!consent?.checked) {
+      if (status) status.textContent = "请先阅读说明并勾选同意。";
+      return;
+    }
+    if (status) status.textContent = "正在保存……";
+    try {
+      const response = await fetch(STATISTICS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resultPayload({
+          displayName,
+          namedConsent: true,
+          bracket: compactBracket()
+        }))
+      });
+      if (!response.ok) throw new Error("request failed");
+      const result = await response.json();
+      if (!result.namedSaved) throw new Error("not saved");
+      tournament.namedResultSaved = true;
+      tournament.savedDisplayName = displayName;
+      saveTournament();
+      statisticsState = { status: "ready", data: result, error: "" };
+      updateStatisticsPanel();
+      updateNamedResultPanel();
+    } catch (_) {
+      if (status) status.textContent = "保存失败，请检查网络后重试；匿名统计和本地结果不受影响。";
+    }
+  }
+
+  async function deleteNamedResult() {
+    if (!window.confirm("确认删除本次比赛的用户名和完整签表吗？匿名名次统计仍会保留。")) return;
+    try {
+      const response = await fetch(STATISTICS_ENDPOINT, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project: "shijing", submissionId: tournament.statisticsSubmissionId })
+      });
+      if (!response.ok) throw new Error("request failed");
+      tournament.namedResultSaved = false;
+      tournament.savedDisplayName = "";
+      saveTournament();
+      updateNamedResultPanel();
+    } catch (_) {
+      window.alert("删除失败，请检查网络后重试。具名记录尚未改变。");
+    }
   }
 
   function updateStatisticsPanel() {
@@ -11918,13 +12051,7 @@ h1 span { color: var(--red); }
       const response = await fetch(STATISTICS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project: "shijing",
-          submissionId: tournament.statisticsSubmissionId,
-          championId: placements.champion.id,
-          runnerUpId: placements.runnerUp.id,
-          semifinalistIds: placements.semifinalists.map((poem) => poem.id)
-        })
+        body: JSON.stringify(resultPayload())
       });
       if (!response.ok) throw new Error("request failed");
       statisticsState = { status: "ready", data: await response.json(), error: "" };
@@ -12944,6 +13071,7 @@ h1 span { color: var(--red); }
           </div>
           <div class="bracket-wrap">${symmetricBracket(rounds)}</div>
         </div>
+        ${namedResultMarkup()}
         ${statisticsMarkup()}
         ${tournament.cut && tournament.cut.kept ? `<div class="result-section"><h3>名单裁定</h3><p>保留：${tournament.cut.kept.map((poet) => escapeHtml(poet.name)).join("、")}</p></div>` : ""}
         ${byeSummary(tournament.byeSelection)}
@@ -13220,6 +13348,10 @@ h1 span { color: var(--red); }
       tournament ? renderStage() : renderHome();
     } else if (action === "download") {
       downloadResult();
+    } else if (action === "save-named-result") {
+      saveNamedResult();
+    } else if (action === "delete-named-result") {
+      deleteNamedResult();
     } else if (action === "retry-statistics") {
       submitStatistics();
     }
