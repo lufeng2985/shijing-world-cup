@@ -522,6 +522,16 @@ h1 span { color: var(--red); }
 .champion span { color: #806428; font-size: 11px; font-weight: 800; letter-spacing: .19em; }
 .champion strong { display: block; margin-top: 10px; color: var(--red); font-family: "Songti SC",SimSun,serif; font-size: 56px; }
 .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-bottom: 30px; }
+.download-hint { max-width: 620px; margin: -17px auto 27px; color: var(--muted); font-size: 12px; line-height: 1.75; text-align: center; }
+.save-image-overlay { position: fixed; z-index: 1300; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(17,22,19,.78); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.save-image-panel { display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; width: min(100%,960px); max-height: 94vh; overflow: hidden; border: 1px solid rgba(181,157,111,.55); border-radius: 17px; background: #f8f5ed; box-shadow: 0 30px 100px rgba(0,0,0,.45); }
+.save-image-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 10px; }
+.save-image-head h2 { margin: 3px 0 0; color: var(--ink); font-family: "Songti SC",STSong,SimSun,serif; font-size: clamp(25px,5vw,38px); }
+.save-image-close { width: 40px; height: 40px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 50%; background: var(--card); color: var(--ink); cursor: pointer; font-size: 27px; line-height: 1; }
+.save-image-help { margin: 0; padding: 0 20px 13px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.save-image-scroll { overflow: auto; overscroll-behavior: contain; padding: 0 14px 14px; text-align: center; -webkit-overflow-scrolling: touch; }
+.save-image-scroll img { display: block; width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--line); background: #eee9de; box-shadow: 0 8px 28px rgba(34,29,20,.14); -webkit-touch-callout: default; user-select: auto; }
+.save-image-done { margin: 0 20px 18px; }
 .result-card { overflow: hidden; }
 .result-section { padding: 22px; border-bottom: 1px solid var(--line); }
 .result-section:last-child { border-bottom: 0; }
@@ -644,6 +654,11 @@ h1 span { color: var(--red); }
   background: #bdb4a4;
   content: "";
 }
+.bracket-connections { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.bracket-connections path { fill: none; stroke: #c8c1b5; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.bracket-connections path.advanced { stroke: #a23a31; stroke-width: 1.6; }
+.symmetric-bracket.has-full-connections .bracket-stage.left .bracket-node::after,
+.symmetric-bracket.has-full-connections .bracket-stage.right .bracket-node::before { display: none; }
 .bracket-stage.left .bracket-node::after { right: -11px; }
 .bracket-stage.right .bracket-node::before { left: -11px; }
 .bracket-stage.left:last-child .bracket-node::after,
@@ -778,9 +793,16 @@ h1 span { color: var(--red); }
   .named-result-heading, .named-result-saved { align-items: stretch; flex-direction: column; }
   .named-result-form { grid-template-columns: 1fr; }
   .named-result-form .primary-button { width: 100%; }
+  .save-image-overlay { padding: 0; place-items: stretch; }
+  .save-image-panel { width: 100%; max-height: 100dvh; min-height: 100vh; min-height: 100dvh; border: 0; border-radius: 0; }
+  .save-image-head { padding: 15px 15px 8px; }
+  .save-image-help { padding: 0 15px 10px; font-size: 12px; }
+  .save-image-scroll { padding: 0 8px 10px; }
+  .save-image-done { margin: 0 15px 14px; }
   .bracket-result-section { padding-inline: 10px; }
   .bracket-title-row { align-items: flex-start; flex-direction: column; gap: 3px; padding-inline: 8px; }
-  .symmetric-bracket { transform-origin: top left; }
+  .bracket-wrap { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; }
+  .symmetric-bracket { width: 1020px; min-width: 1020px; max-width: none; transform: none !important; transform-origin: top left; }
   .footer { flex-direction: column; }
 }
 @media (max-width: 390px) {
@@ -984,7 +1006,7 @@ h1 span { color: var(--red); }
       "振振兮。",
       "螽斯羽，",
       "薨薨兮。",
-      "宜尔子孙。",
+      "宜尔子孙，",
       "绳绳兮。"
     ],
     "excerptStanzas": [
@@ -997,7 +1019,7 @@ h1 span { color: var(--red); }
       [
         "螽斯羽，",
         "薨薨兮。",
-        "宜尔子孙。",
+        "宜尔子孙，",
         "绳绳兮。"
       ]
     ],
@@ -7659,11 +7681,7 @@ h1 span { color: var(--red); }
       "伊谁云从？",
       "维暴之云。",
       "二人从行，",
-      "谁为此祸？",
-      "胡逝我梁，",
-      "不入唁我？",
-      "始者不如今，",
-      "云不我可。"
+      "谁为此祸？"
     ],
     "excerptStanzas": [
       [
@@ -7676,11 +7694,7 @@ h1 span { color: var(--red); }
       ],
       [
         "二人从行，",
-        "谁为此祸？",
-        "胡逝我梁，",
-        "不入唁我？",
-        "始者不如今，",
-        "云不我可。"
+        "谁为此祸？"
       ]
     ],
     "mobileExcerptLength": 6,
@@ -8289,9 +8303,7 @@ h1 span { color: var(--red); }
       [
         "鸳鸯在梁，",
         "戢其左翼。",
-        "君子万年，"
-      ],
-      [
+        "君子万年，",
         "宜其遐福。",
         "乘马在厩，",
         "摧之秣之。",
@@ -8592,7 +8604,7 @@ h1 span { color: var(--red); }
   {
     "id": "shijing-225",
     "name": "都人士",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "彼都人士，",
       "狐裘黄黄。",
@@ -8626,13 +8638,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 6,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 776
   },
   {
     "id": "shijing-226",
     "name": "采绿",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "终朝采绿，",
       "不盈一匊。",
@@ -8658,13 +8670,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 775
   },
   {
     "id": "shijing-227",
     "name": "黍苗",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "芃芃黍苗，",
       "阴雨膏之。",
@@ -8690,13 +8702,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 774
   },
   {
     "id": "shijing-228",
     "name": "隰桑",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "隰桑有阿，",
       "其叶有难。",
@@ -8722,13 +8734,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 773
   },
   {
     "id": "shijing-229",
     "name": "白华",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "白华菅兮，",
       "白茅束兮。",
@@ -8754,13 +8766,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 772
   },
   {
     "id": "shijing-230",
     "name": "绵蛮",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "绵蛮黄鸟，",
       "止于丘阿。",
@@ -8784,13 +8796,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 8,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 771
   },
   {
     "id": "shijing-231",
     "name": "瓠叶",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "幡幡瓠叶，",
       "采之亨之。",
@@ -8816,13 +8828,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 770
   },
   {
     "id": "shijing-232",
     "name": "渐渐之石",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "渐渐之石，",
       "维其高矣。",
@@ -8856,13 +8868,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 6,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 769
   },
   {
     "id": "shijing-233",
     "name": "苕之华",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "苕之华，",
       "芸其黄矣。",
@@ -8888,13 +8900,13 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 768
   },
   {
     "id": "shijing-234",
     "name": "何草不黄",
-    "location": "小雅·都人士之什",
+    "location": "小雅·鱼藻之什",
     "excerpt": [
       "何草不黄？",
       "何日不行？",
@@ -8920,7 +8932,7 @@ h1 span { color: var(--red); }
       ]
     ],
     "mobileExcerptLength": 4,
-    "unitId": "xy-durenshi",
+    "unitId": "xy-yuzao",
     "score": 767
   },
   {
@@ -10444,8 +10456,7 @@ h1 span { color: var(--red); }
       "崇牙树羽。",
       "应田县鼓，",
       "鞉磬柷圉。",
-      "既备。",
-      "乃奏，",
+      "既备乃奏，",
       "箫管备举。"
     ],
     "excerptStanzas": [
@@ -10456,14 +10467,11 @@ h1 span { color: var(--red); }
         "崇牙树羽。",
         "应田县鼓，",
         "鞉磬柷圉。",
-        "既备。"
-      ],
-      [
-        "乃奏，",
+        "既备乃奏，",
         "箫管备举。"
       ]
     ],
-    "mobileExcerptLength": 7,
+    "mobileExcerptLength": 4,
     "unitId": "zhou-song",
     "score": 721
   },
@@ -11416,7 +11424,7 @@ h1 span { color: var(--red); }
   {
     "id": "gf-zhengfeng",
     "label": "国风·郑风",
-    "quota": 3,
+    "quota": 4,
     "poemIds": [
       "shijing-075",
       "shijing-076",
@@ -11672,14 +11680,7 @@ h1 span { color: var(--red); }
       "shijing-221",
       "shijing-222",
       "shijing-223",
-      "shijing-224"
-    ]
-  },
-  {
-    "id": "xy-durenshi",
-    "label": "小雅·都人士之什",
-    "quota": 1,
-    "poemIds": [
+      "shijing-224",
       "shijing-225",
       "shijing-226",
       "shijing-227",
@@ -12217,7 +12218,7 @@ h1 span { color: var(--red); }
           <p class="lead">从十五国风、二雅与三颂的代表作中，在一轮轮取舍里选出你心中的《诗经》第一篇。</p>
           <div class="hero-stats">
             <div class="stat"><strong>305</strong><span>诗经全篇</span></div>
-            <div class="stat"><strong>${data.poets.length}</strong><span>代表作品</span></div>
+            <div class="stat"><strong>${data.selectionUnits.reduce((total, unit) => total + unit.quota, 0)}</strong><span>正赛名额</span></div>
             <div class="stat"><strong>12</strong><span>四篇小组</span></div>
           </div>
         </div>
@@ -12255,7 +12256,7 @@ h1 span { color: var(--red); }
             </div>`).join("")}
           </div>
           <div class="start-bar">
-            <p><strong>第一阶段：篇目预选</strong><br>305篇 → 按28个单元选出48篇 → 四选二小组赛</p>
+            <p><strong>第一阶段：篇目预选</strong><br>305篇 → 按27个单元选出48篇 → 四选二小组赛</p>
             <div class="inline-actions">
               ${savedSelection ? '<button class="quiet-button" type="button" data-action="resume-preselection">继续上次预选</button>' : ""}
               <button class="primary-button" type="button" data-action="start-preselection">开始篇目预选</button>
@@ -13018,8 +13019,8 @@ h1 span { color: var(--red); }
     });
   }
 
-  function bracketNode(poet, advanced) {
-    return `<div class="bracket-node ${advanced ? "advanced" : ""}">
+  function bracketNode(poet, advanced, roundIndex, side, successor) {
+    return `<div class="bracket-node ${advanced ? "advanced" : ""}" data-round="${roundIndex}" data-side="${side}" data-poet="${escapeHtml(poet.id)}" data-successor="${successor ? escapeHtml(successor.id) : ""}">
       <span>${escapeHtml(poet.name)}</span>${advanced ? '<b>晋</b>' : ""}
     </div>`;
   }
@@ -13030,9 +13031,74 @@ h1 span { color: var(--red); }
     return `<div class="bracket-stage ${side}" data-round="${roundIndex}">
       <div class="bracket-stage-label">${roundLabel(round.entrants.length)}</div>
       <div class="bracket-stage-nodes">
-        ${entries.map(({ poet }) => bracketNode(poet, advanced.has(poet.id))).join("")}
+        ${entries.map(({ poet, match }) => bracketNode(poet, advanced.has(poet.id), roundIndex, side, match.winner)).join("")}
       </div>
     </div>`;
+  }
+
+  function drawBracketConnections(root) {
+    if (!root || !root.isConnected) return;
+    const svg = root.querySelector(".bracket-connections");
+    const center = root.querySelector(".bracket-center");
+    if (!svg || !center) return;
+    const rootRect = root.getBoundingClientRect();
+    if (!rootRect.width || !rootRect.height) return;
+    svg.replaceChildren();
+    svg.setAttribute("viewBox", `0 0 ${rootRect.width} ${rootRect.height}`);
+    const nodes = [...root.querySelectorAll(".bracket-node[data-round]")];
+    const centerRect = center.getBoundingClientRect();
+    const centerY = centerRect.top - rootRect.top + centerRect.height / 2;
+    const namespace = "http://www.w3.org/2000/svg";
+
+    nodes.forEach((node) => {
+      const side = node.dataset.side;
+      const roundIndex = Number(node.dataset.round);
+      const successor = node.dataset.successor;
+      const nodeRect = node.getBoundingClientRect();
+      const startX = side === "left" ? nodeRect.right - rootRect.left : nodeRect.left - rootRect.left;
+      const startY = nodeRect.top - rootRect.top + nodeRect.height / 2;
+      const target = nodes.find((candidate) =>
+        candidate.dataset.side === side
+        && Number(candidate.dataset.round) === roundIndex + 1
+        && candidate.dataset.poet === successor
+      );
+      let endX;
+      let endY;
+      if (target) {
+        const targetRect = target.getBoundingClientRect();
+        endX = side === "left" ? targetRect.left - rootRect.left : targetRect.right - rootRect.left;
+        endY = targetRect.top - rootRect.top + targetRect.height / 2;
+      } else {
+        endX = side === "left" ? centerRect.left - rootRect.left : centerRect.right - rootRect.left;
+        endY = centerY;
+      }
+      const middleX = (startX + endX) / 2;
+      const path = document.createElementNS(namespace, "path");
+      path.setAttribute("d", `M ${startX} ${startY} H ${middleX} V ${endY} H ${endX}`);
+      if (node.classList.contains("advanced")) path.setAttribute("class", "advanced");
+      svg.appendChild(path);
+    });
+    root.classList.add("has-full-connections");
+  }
+
+  function centerResultBracketOnMobile(root) {
+    const wrap = root?.closest(".bracket-wrap");
+    if (!wrap || !window.matchMedia("(max-width: 680px)").matches) return;
+    wrap.scrollLeft = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+  }
+
+  function scheduleBracketConnections() {
+    const root = document.querySelector(".symmetric-bracket");
+    if (!root) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      drawBracketConnections(root);
+      centerResultBracketOnMobile(root);
+    }));
+    if (document.fonts?.ready) document.fonts.ready.then(() => drawBracketConnections(root));
+    if (typeof ResizeObserver === "function") {
+      const observer = new ResizeObserver(() => drawBracketConnections(root));
+      observer.observe(root);
+    }
   }
 
   function symmetricBracket(rounds) {
@@ -13040,6 +13106,7 @@ h1 span { color: var(--red); }
     const left = orderedRounds.map((round, index) => bracketStage(round, index, "left")).join("");
     const right = orderedRounds.map((round, index) => bracketStage(round, index, "right")).reverse().join("");
     return `<div class="symmetric-bracket" style="--round-count:${orderedRounds.length}">
+      <svg class="bracket-connections" aria-hidden="true"></svg>
       <div class="bracket-wing left-wing">${left}</div>
       <div class="bracket-center">
         <span class="cup-mark">詩經杯</span>
@@ -13059,9 +13126,10 @@ h1 span { color: var(--red); }
         <h1>${escapeHtml(fullTitle(tournament.title))}</h1>
         <p class="lead" style="margin-left:auto;margin-right:auto">从 ${tournament.initialCount} 篇代表作中产生了你的冠军。对阵图由左右两侧逐轮向中央汇合。</p>
         <div class="result-actions">
-          <button class="primary-button" type="button" data-action="download">下载晋级图 PNG</button>
+          <button class="primary-button" type="button" data-action="download">${isWeChatBrowser() ? "生成高清图（长按保存）" : "下载晋级图 PNG"}</button>
           <button class="quiet-button" type="button" data-action="new-game">再来一次</button>
         </div>
+        ${isWeChatBrowser() ? '<p class="download-hint">微信内置浏览器不支持直接下载文件。点击后会打开高清图片，请长按图片并选择“保存图片”。</p>' : ""}
       </section>
       <section class="result-card">
         <div class="result-section bracket-result-section">
@@ -13080,6 +13148,7 @@ h1 span { color: var(--red); }
         ${groupSummary("小组赛", tournament.groupStage)}
         ${revivalSummary("小组复活", tournament.groupRevival)}
       </section>`;
+    scheduleBracketConnections();
     updateResumeButton();
     submitStatistics();
   }
@@ -13093,6 +13162,76 @@ h1 span { color: var(--red); }
     if (tournament.phase === "transition") return renderTransition();
     if (tournament.phase === "knockout") return renderKnockout();
     if (tournament.phase === "result") return renderResult();
+  }
+
+  function isWeChatBrowser() {
+    return /MicroMessenger/i.test(navigator.userAgent || "");
+  }
+
+  function isAppleMobileBrowser() {
+    const userAgent = navigator.userAgent || "";
+    return /iPhone|iPad|iPod/i.test(userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function triggerImageDownload(url, filename) {
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  function showImageSaveDialog(dataUrl, filename) {
+    document.querySelector(".save-image-overlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.className = "save-image-overlay";
+    overlay.innerHTML = `
+      <section class="save-image-panel" role="dialog" aria-modal="true" aria-labelledby="save-image-title">
+        <div class="save-image-head">
+          <div><p class="eyebrow">RESULT IMAGE</p><h2 id="save-image-title">长按图片保存</h2></div>
+          <button class="save-image-close" type="button" aria-label="关闭">×</button>
+        </div>
+        <p class="save-image-help">在微信中长按下方图片，选择“保存图片”。如果菜单中没有该选项，请先选择“在浏览器打开”，再保存图片。</p>
+        <div class="save-image-scroll"><img src="${dataUrl}" alt="${escapeHtml(filename)}"></div>
+        <button class="primary-button save-image-done" type="button">保存完成，返回结果页</button>
+      </section>`;
+    const close = () => overlay.remove();
+    overlay.querySelector(".save-image-close").addEventListener("click", close);
+    overlay.querySelector(".save-image-done").addEventListener("click", close);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) close();
+    });
+    document.body.appendChild(overlay);
+  }
+
+  async function saveResultCanvas(canvas, filename) {
+    if (isWeChatBrowser()) {
+      showImageSaveDialog(canvas.toDataURL("image/png"), filename);
+      return;
+    }
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        triggerImageDownload(canvas.toDataURL("image/png"), filename);
+        return;
+      }
+      if (isAppleMobileBrowser() && typeof File === "function" && navigator.share && navigator.canShare) {
+        const file = new File([blob], filename, { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: filename });
+            return;
+          } catch (error) {
+            if (error?.name === "AbortError") return;
+          }
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      triggerImageDownload(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }, "image/png");
   }
 
   function downloadResult() {
@@ -13194,18 +13333,7 @@ h1 span { color: var(--red); }
     ctx.fillText(tournament.title, centerX, championY + 137);
 
     const filename = `${fullTitle(tournament.title)}-${tournament.champion.name}.png`;
-    const trigger = (url) => {
-      const link = document.createElement("a");
-      link.download = filename;
-      link.href = url;
-      link.click();
-    };
-    canvas.toBlob((blob) => {
-      if (!blob) return trigger(canvas.toDataURL("image/png"));
-      const url = URL.createObjectURL(blob);
-      trigger(url);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, "image/png");
+    saveResultCanvas(canvas, filename);
   }
 
   document.addEventListener("click", (event) => {
@@ -13267,6 +13395,8 @@ h1 span { color: var(--red); }
     } else if (action === "start-main-tournament") {
       const entrants = allPreselectedPoems();
       if (entrants.length !== 48) return;
+      preselection = null;
+      savePreselection();
       startTournament(entrants);
     } else if (action === "mode") {
       mode = target.dataset.mode;
@@ -13398,9 +13528,15 @@ h1 span { color: var(--red); }
     return { valid: errors.length === 0, errors, rounds: rounds.length };
   }
 
-  window.__SHIJING_CUP_TEST__ = { formatForCount, buildGroups, byeCountFor, buildKnockoutRound, orderKnockoutRounds, placementsFromTournament, validateKnockout, getTournament: () => tournament };
+  window.__SHIJING_CUP_TEST__ = { formatForCount, buildGroups, byeCountFor, buildKnockoutRound, orderKnockoutRounds, placementsFromTournament, isWeChatBrowser, isAppleMobileBrowser, validateKnockout, getTournament: () => tournament };
+  tournament = loadTournament();
+  preselection = loadPreselection();
   updateResumeButton();
-  renderHome();
+  if (tournament) renderStage();
+  else if (preselection) {
+    const complete = data.selectionUnits.every((unit) => (preselection.selections[unit.id] || []).length === unit.quota);
+    complete ? renderPreselectionSummary() : renderPreselection();
+  } else renderHome();
 })();
 
 </script>
